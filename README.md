@@ -9,10 +9,11 @@ This guide provides a comprehensive step-by-step process for setting up a NestJS
 4. [System Updates and Install Dependencies](#4-system-updates-and-install-dependencies)
 5. [Clone the Repository and Install Dependencies](#5-clone-the-repository-and-install-dependencies)
 6. [Environment Setup](#6-environment-setup)
-7. [Install and Configure Nginx](#7-install-and-configure-nginx)
-8. [Install and Configure PM2](#8-install-and-configure-pm2)
-9. [Final Steps and Testing](#9-final-steps-and-testing)
-10. [Conclusion](#9-conclusion)
+7. [Install Nginx](#7-install-nginx)
+8. [Nginx as a HTTP Proxy](#8-nginx-as-a-http-proxy)
+9. [Install PM2](#9-install-pm2)
+10. [Final Steps and Testing](#10-final-steps-and-testing)
+11. [Conclusion](#11-conclusion)
 
 ## 1. Project Setup
 
@@ -147,7 +148,7 @@ $ nano .env
 
 Inside the file, adjust the values to match your configuration. After editing, save the file by pressing Ctrl + O, then Enter, and exit with Ctrl + X.
 
-## 7. Install and Configure Nginx
+## 7. Install  Nginx
 
 To ensure that your NestJS application runs smoothly and can handle production traffic, install and configure Nginx as a reverse proxy along with PM2 for process management.
 
@@ -157,10 +158,52 @@ $ sudo ufw app list
 $ sudo ufw allow 'Nginx HTTP'
 $ sudo systemctl start nginx
 $ systemctl status nginx
+```
+
+## 8. Nginx as a HTTP Proxy
+
+To configure Nginx as a reverse proxy for your NestJS application, follow the steps below. This will allow Nginx to handle incoming traffic and forward it to your Node.js application running on a specific port (e.g., 3001).
+
+```bash
+$ sudo su
+$ cd /etc/nginx/sites-available
+$ nano default
+```
+
+Inside the file, add the following upstream block outside the server block. This block defines your Node.js application's upstream server:
+
+```bash
+upstream my_nodejs_upstream {
+    server 127.0.0.1:3000;   # Replace with the port your NestJS app is running on
+    keepalive 64;
+}
+```
+
+Inside the server block, configure the location / directive to proxy incoming requests to your NestJS application. Add or replace the following code:
+
+```bash
+location / {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header Host $http_host;
+    
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    
+    proxy_pass http://my_nodejs_upstream/;  # Forward requests to the upstream block
+    proxy_redirect off;
+    proxy_read_timeout 240s;
+}
+```
+
+Save the changes (in nano, use Ctrl + O, then press Enter, and exit with Ctrl + X).
+
+```bash
 $ sudo systemctl restart nginx
 ```
 
-## 8. Install and Configure PM2
+## 9. Install PM2
 
 Install PM2 globally using Yarn:
 
@@ -169,7 +212,7 @@ $ yarn global add pm2
 $ pm2 start dist/main.js --name application_name
 ```
 
-## 9. Final Steps and Testing
+## 10. Final Steps and Testing
 
 Open your browser or use Postman to test your application by sending a request to your EC2 instance
 
@@ -177,7 +220,9 @@ Open your browser or use Postman to test your application by sending a request t
 $ http://public_ip_address
 ```
 
-## 10. Conclusion
+![Postman Test](./src/media/postman.PNG)
+
+## 11. Conclusion
 
 You have successfully set up, deployed, and tested a scalable NestJS application on an AWS EC2 instance. By following best practices like version control, process management, and using Nginx as a reverse proxy, your application is now ready for production.
 
