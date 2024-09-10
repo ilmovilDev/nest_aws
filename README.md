@@ -220,7 +220,7 @@ Open your browser or use Postman to test your application by sending a request t
 $ http://public_ip_address
 ```
 
-![Postman Test](./src/media/postman.PNG)
+![Postman Test](https://res.cloudinary.com/dlzbdwcaj/image/upload/v1725985467/postman_hwwkdu.png)
 
 ## 11. Conclusion
 
